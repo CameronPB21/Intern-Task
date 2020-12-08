@@ -15,7 +15,7 @@ INTERICTAL = 1
 ICTAL = 2
 
 # Creating file_list for data
-data_path = "C:\\Users\\camer\\Desktop\\Neurovigil\\EEG_Data_Z\\"
+data_path = "C:\\Users\\camer\\Desktop\\Neurovigil\\EEG_Data\\"
 folder_names = ['Z_normal', 'O_normal', 'N_interictal', 
                 'F_interictal', 'S_ictal']
 state_label = [NORMAL]*200 + [INTERICTAL]*200 + [ICTAL]*100
