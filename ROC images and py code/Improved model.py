@@ -12,6 +12,7 @@ from sklearn import preprocessing
 from sklearn import decomposition
 from sklearn import feature_selection
 from sklearn import model_selection
+from sklearn.ensemble import RandomForestClassifier
 # Constants
 NORMAL = 0
 INTERICTAL = 1
@@ -43,8 +44,8 @@ data_transpose = np.transpose(data)
 
 # Variable/data organization
 x = data
-y = state_label
-y = label_binarize(y, classes=[0, 1, 2])
+labels = state_label
+y = label_binarize(labels, classes=[0, 1, 2])
 n_classes = y.shape[1]
 
 # Using PCA to first decide where %95 of the data is, then fit to that %95
@@ -68,21 +69,30 @@ def svc_model(x_train, y_train, x_test, y_test):
     classifier = OneVsRestClassifier(svm.SVC(kernel='linear', probability=True))
     classifier.fit(x_train, y_train)
     y_test_preds = classifier.predict(x_test)
-
     fpr, tpr, roc_auc = roc_auc_calc(n_classes, y_test, y_test_preds)
     plot_roc(fpr, tpr, roc_auc, 'Receiver Operating Characteristic: SVC Model')
+    results = [classifier, roc_auc[2]] 
+    return results
 
 # Create, train, test a Decision Tree Model
-def decision_tree_model(x_train, y_train, x_test, y_test, iterations=1):
+def decision_tree_model(x_train, y_train, x_test, y_test):
     decision_tree = DecisionTreeClassifier(random_state=0)
-    for _ in range(iterations):
-        decision_tree.fit(x_train, y_train)
-        importances = decision_tree.feature_importances_
-        y_test_preds = decision_tree.predict(x_test)  
-        fpr, tpr, roc_auc = roc_auc_calc(n_classes, y_test, y_test_preds)
-        predictions = decision_tree.predict(x_test)
+    decision_tree.fit(x_train, y_train)
+    y_test_preds = decision_tree.predict(x_test)  
+    fpr, tpr, roc_auc = roc_auc_calc(n_classes, y_test, y_test_preds)
     plot_roc(fpr, tpr, roc_auc, 'Receiver Operating Characteristic: Decision Tree Model')
-    return importances, predictions
+    results = [decision_tree, roc_auc[2]] 
+    return results
+
+# Create, train, test a Random Forest Model
+def random_forest_model(x_train, y_train, x_test, y_test):
+    random_forest = RandomForestClassifier(n_estimators=100)
+    random_forest.fit(x_train, y_train)
+    y_test_preds = random_forest.predict(x_test)  
+    fpr, tpr, roc_auc = roc_auc_calc(n_classes, y_test, y_test_preds)
+    plot_roc(fpr, tpr, roc_auc, 'Receiver Operating Characteristic: Random Foreset Model')
+    results = [random_forest, roc_auc[2]] 
+    return results
 
 # Compute ROC curve and ROC area for a general model
 def roc_auc_calc(n_classes, y_test, y_test_preds):
@@ -96,7 +106,6 @@ def roc_auc_calc(n_classes, y_test, y_test_preds):
         
 # Plot an ROC curve
 def plot_roc(fpr, tpr, roc_auc, graph_title):
-    #Plotting ROC curve for SVC Model
     plt.figure()
     lw = 2
     plt.plot(fpr[2], tpr[2], color='red',
@@ -113,20 +122,28 @@ def plot_roc(fpr, tpr, roc_auc, graph_title):
 data = my_preprocessing(data)
 x_train, x_test, y_train, y_test = train_test_split(data, y, test_size=0.1, random_state=1)
 svc_model(x_train, y_train, x_test, y_test)
-importances, predictions = decision_tree_model(x_train, y_train, x_test, y_test, )
+decision_tree_model(x_train, y_train, x_test, y_test)
+rfm = random_forest_model(x_train, y_train, x_test, y_test)
+
+#new_data = data
+#rfe = feature_selection.RFE(rfm[0])
+#new_data = rfe.fit_transform(new_data, labels)
+#new_data = my_preprocessing(new_data)
+#x_train, x_test, y_train, y_test = train_test_split(new_data, y, test_size=0.1, random_state=1)
+#
+#random_forest_model(x_train, y_train, x_test, y_test)
 
 
-#for i in range(4):
-#    deleted = 0
-#    new_y = y
-#    new_data = data
-#    for i in range(np.size(importances)):
-#        if importances[i] == 0:
-#            new_data = np.delete(new_data, i - deleted, 1)
-#            new_y = np.delete(new_y, i - deleted, 0)
-#            deleted += 1
-#    
-#    new_data = my_preprocessing(new_data)
-#    x_train, x_test, y_train, y_test = train_test_split(data, y, test_size=.2, random_state=1)
-#    importances, predictions = decision_tree_model(x_train, y_train, x_test, y_test, )
-#    print(np.size(new_data))
+
+
+
+
+
+
+
+
+
+
+
+
+
