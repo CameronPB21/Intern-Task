@@ -79,7 +79,6 @@ def decision_tree_model(x_train, y_train, x_test, y_test, iterations=1):
         decision_tree.fit(x_train, y_train)
         importances = decision_tree.feature_importances_
         y_test_preds = decision_tree.predict(x_test)  
-        score = decision_tree.score(x_test, y_test)
         fpr, tpr, roc_auc = roc_auc_calc(n_classes, y_test, y_test_preds)
         predictions = decision_tree.predict(x_test)
     plot_roc(fpr, tpr, roc_auc, 'Receiver Operating Characteristic: Decision Tree Model')
