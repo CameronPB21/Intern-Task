@@ -57,7 +57,7 @@ def my_preprocessing(data):
     for i in pca1.explained_variance_ratio_:
         minimum_data += i
         components += 1
-        if minimum_data > 0.95:
+        if minimum_data > 0.99:
             print("minimum_data = " + str(minimum_data) + "\nafter x components:" + str(components))
             break
     pca = decomposition.PCA(n_components = components)
@@ -112,6 +112,7 @@ def plot_roc(fpr, tpr, roc_auc, graph_title):
         
 data = my_preprocessing(data)
 x_train, x_test, y_train, y_test = train_test_split(data, y, test_size=0.1, random_state=1)
+svc_model(x_train, y_train, x_test, y_test)
 importances, predictions = decision_tree_model(x_train, y_train, x_test, y_test, )
 
 
