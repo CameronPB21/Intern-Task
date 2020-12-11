@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import glob
+import pandas as pd
 
 from sklearn import svm
 from sklearn.metrics import roc_curve, auc
@@ -13,6 +14,7 @@ from sklearn import decomposition
 from sklearn import feature_selection
 from sklearn import model_selection
 from sklearn.ensemble import RandomForestClassifier
+
 # Constants
 NORMAL = 0
 INTERICTAL = 1
@@ -58,7 +60,7 @@ def my_preprocessing(data):
     for i in pca1.explained_variance_ratio_:
         minimum_data += i
         components += 1
-        if minimum_data > 0.99:
+        if minimum_data > 0.90:
             print("minimum_data = " + str(minimum_data) + "\nafter x components:" + str(components))
             break
     pca = decomposition.PCA(n_components = components)
@@ -92,6 +94,7 @@ def random_forest_model(x_train, y_train, x_test, y_test):
     fpr, tpr, roc_auc = roc_auc_calc(n_classes, y_test, y_test_preds)
     plot_roc(fpr, tpr, roc_auc, 'Receiver Operating Characteristic: Random Foreset Model')
     results = [random_forest, roc_auc[2]] 
+    print(random_forest.score(x_test, y_test))
     return results
 
 # Compute ROC curve and ROC area for a general model
@@ -118,20 +121,27 @@ def plot_roc(fpr, tpr, roc_auc, graph_title):
     plt.title(graph_title)
     plt.legend(loc="upper left")
     plt.show()
+
+def find_alpha(dt, x_train, y_train, x_test, y_test):
+    path = dt.cost_complexity_pruning_path(x_train, y_train)
+    ccp_alphas = path.ccp_alphas
+    ccp_alphas = ccp_alphas[:-1]
+    all_alphas = []
+    for ccp_alpha in ccp_alphas:
+        new_dt = DecisionTreeClassifier(random_state=0)
+        scores = model_selection.cross_val_score(new_dt, x_train, y_train, cv=8)
+        all_alphas.append([ccp_alpha, np.mean(scores), np.std(scores)])
+    results = pd.DataFrame(all_alphas,
+                           columns=['alpha', 'mean', 'std'])
+    results.plot(x='alpha', y='mean', marker='o', linestyle='--')
+    
         
 data = my_preprocessing(data)
-x_train, x_test, y_train, y_test = train_test_split(data, y, test_size=0.1, random_state=1)
+x_train, x_test, y_train, y_test = train_test_split(data, y, test_size=0.2, random_state=0)
 svc_model(x_train, y_train, x_test, y_test)
-decision_tree_model(x_train, y_train, x_test, y_test)
+dt_results = decision_tree_model(x_train, y_train, x_test, y_test)
 rfm = random_forest_model(x_train, y_train, x_test, y_test)
-
-#new_data = data
-#rfe = feature_selection.RFE(rfm[0])
-#new_data = rfe.fit_transform(new_data, labels)
-#new_data = my_preprocessing(new_data)
-#x_train, x_test, y_train, y_test = train_test_split(new_data, y, test_size=0.1, random_state=1)
-#
-#random_forest_model(x_train, y_train, x_test, y_test)
+#alpha = find_alpha(dt_results[0], x_train, y_train, x_test, y_test)
 
 
 
