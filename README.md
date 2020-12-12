@@ -13,8 +13,11 @@ First, recognizes the data from the University of Bonn as having the following s
 Second, extracts the data from the folders and organizes it as one dataset of eeg measurements with 
 classifications according to the participant's current status (normal, interictal, ictal)
 
-Third, builds two different models based on the extracted dataset, one svc and one decision tree. Then trains
-the models using %80 of the dataset, and tests the model on the remaining %20 of the dataset.
+Third, preforms PCA on the dataset to determine the n most informative dimensions, then reduces the dataset to 
+those first n dimensions.
+
+Fourth, builds three different models based on the extracted dataset, one svc, one decision tree, and one random forest. Then trains
+the models using 80% of the dataset, and tests the model on the remaining 20% of the dataset.
 
 Last, the results of testing each model are plotted on a Receiver Operating Characteristic (ROC) curve, and the 
 Area Under the ROC Curve (AUC) is calculated and shown on the graphs.
