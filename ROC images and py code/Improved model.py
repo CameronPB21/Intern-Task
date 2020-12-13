@@ -11,7 +11,6 @@ from sklearn.multiclass import OneVsRestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn import preprocessing
 from sklearn import decomposition
-from sklearn import feature_selection
 from sklearn import model_selection
 from sklearn.ensemble import RandomForestClassifier
 
@@ -77,8 +76,8 @@ def svc_model(x_train, y_train, x_test, y_test):
     return results
 
 # Create, train, test a Decision Tree Model
-def decision_tree_model(x_train, y_train, x_test, y_test):
-    decision_tree = DecisionTreeClassifier(random_state=0)
+def decision_tree_model(x_train, y_train, x_test, y_test, alpha):
+    decision_tree = DecisionTreeClassifier(random_state=0, ccp_alpha=alpha)
     decision_tree.fit(x_train, y_train)
     y_test_preds = decision_tree.predict(x_test)  
     fpr, tpr, roc_auc = roc_auc_calc(n_classes, y_test, y_test_preds)
@@ -94,7 +93,6 @@ def random_forest_model(x_train, y_train, x_test, y_test):
     fpr, tpr, roc_auc = roc_auc_calc(n_classes, y_test, y_test_preds)
     plot_roc(fpr, tpr, roc_auc, 'Receiver Operating Characteristic: Random Foreset Model')
     results = [random_forest, roc_auc[2]] 
-    print(random_forest.score(x_test, y_test))
     return results
 
 # Compute ROC curve and ROC area for a general model
@@ -122,38 +120,47 @@ def plot_roc(fpr, tpr, roc_auc, graph_title):
     plt.legend(loc="upper left")
     plt.show()
 
-def find_alpha(dt, x_train, y_train, x_test, y_test):
-    path = dt.cost_complexity_pruning_path(x_train, y_train)
+# Finding the best pruning factor for Decision Tree Model
+def find_alpha(x_train, y_train, x_test, y_test):
+    path = DecisionTreeClassifier(random_state=0).cost_complexity_pruning_path(x_train, y_train)
     ccp_alphas = path.ccp_alphas
     ccp_alphas = ccp_alphas[:-1]
-    all_alphas = []
-    for ccp_alpha in ccp_alphas:
-        new_dt = DecisionTreeClassifier(random_state=0)
-        scores = model_selection.cross_val_score(new_dt, x_train, y_train, cv=8)
-        all_alphas.append([ccp_alpha, np.mean(scores), np.std(scores)])
-    results = pd.DataFrame(all_alphas,
-                           columns=['alpha', 'mean', 'std'])
-    results.plot(x='alpha', y='mean', marker='o', linestyle='--')
+    all_dts = []
+    for ccp_alpha in ccp_alphas:     
+        new_dt = DecisionTreeClassifier(random_state=0, ccp_alpha=ccp_alpha)
+        new_dt.fit(x_train, y_train)
+        all_dts.append(new_dt)
     
-        
+    train_scores_dict = dict()
+    test_scores_dict = dict()
+    train_scores = []
+    test_scores = []
+    i = 0
+    for dt in all_dts:
+        train_scores.append(dt.score(x_train, y_train))
+        test_scores.append(dt.score(x_test, y_test))
+        train_scores_dict[train_scores[i]] = dt.ccp_alpha
+        test_scores_dict[test_scores[i]] = dt.ccp_alpha
+        i += 1
+    
+    fig, ax = plt.subplots()
+    ax.set_xlabel("alpha")
+    ax.set_ylabel("accuracy")
+    ax.set_title("Accuracy vs alpha for training and testing sets")
+    ax.plot(ccp_alphas, train_scores, marker='o', label="train",
+            drawstyle="steps-post")
+    ax.plot(ccp_alphas, test_scores, marker='o', label="test",
+            drawstyle="steps-post")
+    ax.legend()
+    plt.show()
+    
+    return test_scores_dict[max(test_scores_dict.keys())]
+    
 data = my_preprocessing(data)
 x_train, x_test, y_train, y_test = train_test_split(data, y, test_size=0.2, random_state=0)
+
+alpha = find_alpha(x_train, y_train, x_test, y_test)
+
 svc_model(x_train, y_train, x_test, y_test)
-dt_results = decision_tree_model(x_train, y_train, x_test, y_test)
+dt_results = decision_tree_model(x_train, y_train, x_test, y_test, alpha)
 rfm = random_forest_model(x_train, y_train, x_test, y_test)
-#alpha = find_alpha(dt_results[0], x_train, y_train, x_test, y_test)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
