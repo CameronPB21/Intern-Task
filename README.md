@@ -1,4 +1,4 @@
-# Neurovigil
+# Task
 Internship Task for modeling EEG data
 
 Given an EEG dataset containing seizure and non-seizure data from the University of Bonn: 
